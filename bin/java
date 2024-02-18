@@ -1,0 +1,99 @@
+#!/bin/sh
+
+# SPDX-License-Identifier: MIT
+
+# This is Fsu0413's wrapper for Java, work with JAVA_HOME environment variable
+# I'm by no means a developer of / for / to Java, but I've found that I need a wrapper for switching different Java versions during my development
+# Since using JAVA_HOME environment variable is common approach, my wrapper will respect that
+
+set -e
+
+FS_JAVA_WRAPPER_VERSION_MAJOR="0"
+FS_JAVA_WRAPPER_VERSION_MINOR="0"
+FS_JAVA_WRAPPER_VERSION_PATCH="1"
+FS_JAVA_WRAPPER_VERSION="${FS_JAVA_WRAPPER_VERSION_MAJOR}.${FS_JAVA_WRAPPER_VERSION_MINOR}.${FS_JAVA_WRAPPER_VERSION_PATCH}"
+FS_JAVA_WRAPPER_HELP='Usage:
+  "'"$0"'" -<whatever arguments of Java> (the original argument pass to Java, see "'$0'" -help)
+  "'"$0"'" -FsJavaWrapperVersion         Show the version of this wrapper
+  "'"$0"'" -FsJavaWrapperHelp            Show this help
+'
+
+if [ "$#" -eq 1 ]; then
+  # `java -version` and other Java related arguments'd passthrough to Java itself so we should use magic strings which won't seems to be added to Java
+  # So use "FsJavaWrapper" as the argument prefix.
+  # support "-FsJavaWrapperVersion" and "-FsJavaWrapperHelp" at first.
+  if [ "$1" = "-FsJavaWrapperVersion" ]; then
+    exec echo "${FS_JAVA_WRAPPER_VERSION}"
+  elif [ "$1" = "-FsJavaWrapperHelp" ]; then
+    exec echo "${FS_JAVA_WRAPPER_HELP}"
+  fi
+fi
+
+# sed away the path prefix (if any) from $0
+FS_JAVA_WRAPPER_EXECUTABLE="$(echo "$0" | sed 's,^.*/,,')"
+if [ "${FS_JAVA_WRAPPER_EXECUTABLE}" = "$0" ]; then
+  # This executable is run from PATH environment variable
+  FS_JAVA_WRAPPER_ABSOLUTE_PATH="$(cd "$(dirname "$(which "$0")")/../"; pwd)"
+else
+  # This executable is run from path
+  FS_JAVA_WRAPPER_ABSOLUTE_PATH="$(cd "$(dirname "$0")/../"; pwd)"
+fi
+
+# first of all, unset the output variable we are using
+unset FS_JAVA_WRAPPER_JAVA_FOUND
+
+# if JAVA_HOME exists and is a directory, find the corresponding executable
+if [ "${JAVA_HOME}" ]; then
+  if [ -d "${JAVA_HOME}" ]; then
+    FS_JAVA_WRAPPER_ABSOLUTE_JAVA_HOME="$(cd "${JAVA_HOME}"; pwd)"
+    if [ "${FS_JAVA_WRAPPER_ABSOLUTE_PATH}" = "${FS_JAVA_WRAPPER_ABSOLUTE_JAVA_HOME}" ]; then
+      echo 'Warning: JAVA_HOME is set to the directory which contains this script. Falling through to searching for another Java installation.' >&2
+    else
+      # only "java" executable is searched for since it is guaranteed to exist in every Java distribution
+      if [ -f "${FS_JAVA_WRAPPER_ABSOLUTE_JAVA_HOME}/bin/java" ] && [ -x "${FS_JAVA_WRAPPER_ABSOLUTE_JAVA_HOME}/bin/java" ]; then
+        # Things looks good!
+        FS_JAVA_WRAPPER_JAVA_FOUND="${FS_JAVA_WRAPPER_ABSOLUTE_JAVA_HOME}/bin"
+      else
+        echo 'Warning: JAVA_HOME is set to "'"${JAVA_HOME}"'"("'"${FS_JAVA_WRAPPER_ABSOLUTE_JAVA_HOME}"'") but there is no "'"${FS_JAVA_WRAPPER_ABSOLUTE_JAVA_HOME}"'/bin/java" executable available. Falling through to searching for another Java installation.' >&2
+      fi
+    fi
+  else
+    echo 'Warning: JAVA_HOME is set to "'"${JAVA_HOME}"'" but it is not a directory. Falling through to searching for another Java installation.' >&2
+  fi
+fi
+
+if ! [ "${FS_JAVA_WRAPPER_JAVA_FOUND}" ]; then
+  # JAVA_HOME was not successfully set in above logic, so search PATH
+  IFS=:
+  for FS_JAVA_WRAPPER_PATH_ENV_EACH in ${PATH}; do
+    if [ -d "${FS_JAVA_WRAPPER_PATH_ENV_EACH}" ]; then
+      # Literally all paths in PATH need to be absolute. But MSYS 1.0 do not. It inserts a "." to PATH
+      # So make FS_JAVA_WRAPPER_PATH_ENV_EACH absolute here
+      FS_JAVA_WRAPPER_ABSOLUTE_PATH_ENV_EACH="$(cd "${FS_JAVA_WRAPPER_PATH_ENV_EACH}"; pwd)"
+
+      # The directory should be the one containing this script
+      if ! [ "${FS_JAVA_WRAPPER_ABSOLUTE_PATH_ENV_EACH}" = "${FS_JAVA_WRAPPER_ABSOLUTE_PATH}/bin" ]; then
+        # Search for "java" executable only, for same reason as above
+        if [ -f "${FS_JAVA_WRAPPER_ABSOLUTE_PATH_ENV_EACH}/java" ] && [ -x "${FS_JAVA_WRAPPER_ABSOLUTE_PATH_ENV_EACH}/java" ]; then
+          FS_JAVA_WRAPPER_JAVA_FOUND="${FS_JAVA_WRAPPER_ABSOLUTE_PATH_ENV_EACH}"
+          break
+        fi
+      fi
+    fi
+  done
+  unset IFS
+fi
+
+# What if FS_JAVA_WRAPPER_JAVA_FOUND is still not defined?
+if ! [ "${FS_JAVA_WRAPPER_JAVA_FOUND}" ]; then
+  echo 'Error: Unable to find a Java installation at either JAVA_HOME or PATH. Please confirm your installation.' >&2
+  exit 127
+fi
+
+if [ -f "${FS_JAVA_WRAPPER_JAVA_FOUND}/${FS_JAVA_WRAPPER_EXECUTABLE}" ] && [ -x "${FS_JAVA_WRAPPER_JAVA_FOUND}/${FS_JAVA_WRAPPER_EXECUTABLE}" ]; then
+  # Finally! exec into it!
+  exec "${FS_JAVA_WRAPPER_JAVA_FOUND}/${FS_JAVA_WRAPPER_EXECUTABLE}" "$@"
+fi
+
+echo 'Error: found Java installation at "'"${FS_JAVA_WRAPPER_JAVA_FOUND}"'" but this installation does not support tool "'"${FS_JAVA_WRAPPER_EXECUTABLE}"'".' >&2
+exit 127
