@@ -13,7 +13,7 @@ FS_JAVA_WRAPPER_VERSION_MINOR="0"
 FS_JAVA_WRAPPER_VERSION_PATCH="1"
 FS_JAVA_WRAPPER_VERSION="${FS_JAVA_WRAPPER_VERSION_MAJOR}.${FS_JAVA_WRAPPER_VERSION_MINOR}.${FS_JAVA_WRAPPER_VERSION_PATCH}"
 FS_JAVA_WRAPPER_HELP='Usage:
-  "'"$0"'" -<whatever arguments of Java> (the original argument pass to Java, see "'$0'" -help)
+  "'"$0"'" -<whatever arguments of Java> (the original argument pass to Java, see "'"$0"'" -help)
   "'"$0"'" -FsJavaWrapperVersion         Show the version of this wrapper
   "'"$0"'" -FsJavaWrapperHelp            Show this help
 '
