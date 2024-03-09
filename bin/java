@@ -6,6 +6,8 @@
 # I'm by no means a developer of / for / to Java, but I've found that I need a wrapper for switching different Java versions during my development
 # Since using JAVA_HOME environment variable is common approach, my wrapper will respect that
 
+# The variable of this Java wrapper use "FS_JAVA_WRAPPER_" as prefix.
+
 set -e
 
 FS_JAVA_WRAPPER_VERSION_MAJOR="0"
@@ -13,24 +15,24 @@ FS_JAVA_WRAPPER_VERSION_MINOR="0"
 FS_JAVA_WRAPPER_VERSION_PATCH="1"
 FS_JAVA_WRAPPER_VERSION="${FS_JAVA_WRAPPER_VERSION_MAJOR}.${FS_JAVA_WRAPPER_VERSION_MINOR}.${FS_JAVA_WRAPPER_VERSION_PATCH}"
 FS_JAVA_WRAPPER_HELP='Usage:
-  "'"$0"'" -<whatever arguments of Java> (the original argument pass to Java, see "'"$0"'" -help)
-  "'"$0"'" -FsJavaWrapperVersion         Show the version of this wrapper
-  "'"$0"'" -FsJavaWrapperHelp            Show this help
+  '"'$0'"' -<whatever arguments of Java> (the original argument pass to Java, see "'"$0"'" -help)
+  '"'$0'"' -JavaHomeWrapperVersion       Show the version of this wrapper
+  '"'$0'"' -JavaHomeWrapperHelp          Show this help
 '
 
 if [ "$#" -eq 1 ]; then
   # `java -version` and other Java related arguments'd passthrough to Java itself so we should use magic strings which won't seems to be added to Java
-  # So use "FsJavaWrapper" as the argument prefix.
-  # support "-FsJavaWrapperVersion" and "-FsJavaWrapperHelp" at first.
-  if [ "$1" = "-FsJavaWrapperVersion" ]; then
+  # So use "JavaHomeWrapper" as the argument prefix.
+  # support "-JavaHomeWrapperVersion" and "-JavaHomeWrapperHelp" at first.
+  if [ "$1" = "-JavaHomeWrapperVersion" ]; then
     exec echo "${FS_JAVA_WRAPPER_VERSION}"
-  elif [ "$1" = "-FsJavaWrapperHelp" ]; then
+  elif [ "$1" = "-JavaHomeWrapperHelp" ]; then
     exec echo "${FS_JAVA_WRAPPER_HELP}"
   fi
 fi
 
-# sed away the path prefix (if any) from $0
-FS_JAVA_WRAPPER_EXECUTABLE="$(echo "$0" | sed 's,^.*/,,')"
+# use `basename` to extract the executable name from $0, so that FS_JAVA_WRAPPER_EXECUTABLE is the executable name which should be `exec`-ed into
+FS_JAVA_WRAPPER_EXECUTABLE="$(basename "$0")"
 if [ "${FS_JAVA_WRAPPER_EXECUTABLE}" = "$0" ]; then
   # This executable is run from PATH environment variable
   FS_JAVA_WRAPPER_ABSOLUTE_PATH="$(cd "$(dirname "$(which "$0")")/../"; pwd)"
