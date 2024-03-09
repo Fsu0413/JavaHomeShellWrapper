@@ -34,10 +34,11 @@ fi
 # use `basename` to extract the executable name from $0, so that FS_JAVA_WRAPPER_EXECUTABLE is the executable name which should be `exec`-ed into
 FS_JAVA_WRAPPER_EXECUTABLE="$(basename "$0")"
 if [ "${FS_JAVA_WRAPPER_EXECUTABLE}" = "$0" ]; then
-  # This executable is run from PATH environment variable
-  FS_JAVA_WRAPPER_ABSOLUTE_PATH="$(cd "$(dirname "$(which "$0")")/../"; pwd)"
+  # Is this the case that we have run the script via interpreter?
+  FS_JAVA_WRAPPER_ABSOLUTE_PATH="$(cd "../"; pwd)"
 else
-  # This executable is run from path
+  # This executable is run using (relative or absolute) path, or PATH environment variable (since shell always give us absolute path when running from PATH)
+  # It's unknown that this executable is absolute, so make absolute
   FS_JAVA_WRAPPER_ABSOLUTE_PATH="$(cd "$(dirname "$0")/../"; pwd)"
 fi
 
