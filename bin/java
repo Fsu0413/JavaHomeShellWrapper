@@ -46,7 +46,7 @@ fi
 unset FS_JAVA_WRAPPER_JAVA_FOUND
 
 # if JAVA_HOME exists and is a directory, find the corresponding executable
-if [ "${JAVA_HOME}" ]; then
+if [ -n "${JAVA_HOME}" ]; then
   if [ -d "${JAVA_HOME}" ]; then
     FS_JAVA_WRAPPER_ABSOLUTE_JAVA_HOME="$(cd "${JAVA_HOME}"; pwd)"
     if [ "${FS_JAVA_WRAPPER_ABSOLUTE_PATH}" = "${FS_JAVA_WRAPPER_ABSOLUTE_JAVA_HOME}" ]; then
@@ -65,7 +65,7 @@ if [ "${JAVA_HOME}" ]; then
   fi
 fi
 
-if ! [ "${FS_JAVA_WRAPPER_JAVA_FOUND}" ]; then
+if ! [ -n "${FS_JAVA_WRAPPER_JAVA_FOUND}" ]; then
   # JAVA_HOME was not successfully set in above logic, so search PATH
   IFS=:
   for FS_JAVA_WRAPPER_PATH_ENV_EACH in ${PATH}; do
@@ -88,7 +88,7 @@ if ! [ "${FS_JAVA_WRAPPER_JAVA_FOUND}" ]; then
 fi
 
 # What if FS_JAVA_WRAPPER_JAVA_FOUND is still not defined?
-if ! [ "${FS_JAVA_WRAPPER_JAVA_FOUND}" ]; then
+if ! [ -n "${FS_JAVA_WRAPPER_JAVA_FOUND}" ]; then
   echo 'Error: Unable to find a Java installation at either JAVA_HOME or PATH. Please confirm your installation.' >&2
   exit 127
 fi
